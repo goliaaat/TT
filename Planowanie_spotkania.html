@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planowanie spotkania zespolow</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Segoe UI,Arial,sans-serif;background:#f5f5f5}
+.container{display:flex;height:100vh}
+.sidebar{width:420px;background:#fff;padding:20px;overflow:auto;box-shadow:2px 0 10px rgba(0,0,0,.1)}
+#map{flex:1}
+
+h1{font-size:22px;margin-bottom:15px;border-bottom:3px solid #2196F3;padding-bottom:10px}
+
+.section{background:#f9f9f9;padding:15px;border-radius:8px;margin-bottom:15px;border:1px solid #e0e0e0}
+
+.section-title{font-weight:600;color:#333;margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid #e0e0e0;font-size:14px}
+
+.btn-map{background:#2196F3;color:#fff;width:100%;padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;margin-bottom:10px}
+.btn-map.active{background:#1565C0;box-shadow:0 0 10px rgba(33,150,243,0.5)}
+.btn-map:hover{background:#1976D2}
+
+.map-hint{background:#fff3e0;border-left:4px solid #FF9800;padding:10px;border-radius:4px;font-size:12px;color:#F57C00;margin-bottom:10px;display:none}
+
+.destination-info{background:#e3f2fd;border-left:4px solid #2196F3;padding:12px;border-radius:4px;margin:10px 0;font-weight:600;color:#1976D2;font-size:14px;display:none}
+
+.destination-coords{font-size:11px;color:#999;margin-top:4px}
+
+.clear-dest-btn{background:#f44336;color:#fff;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;border:none;margin-top:8px;display:none}
+.clear-dest-btn:hover{background:#da190b}
+
+.checkboxes{display:flex;flex-direction:column;gap:10px;margin-bottom:15px}
+
+.checkbox-label{display:flex;align-items:center;font-weight:normal;margin:0;cursor:pointer;font-size:14px}
+.checkbox-label input{width:18px;height:18px;cursor:pointer;margin-right:10px}
+
+.button-group{display:flex;gap:10px;margin-top:10px}
+
+button{padding:10px;border:none;border-radius:6px;cursor:pointer;font-weight:600;transition:all 0.2s}
+
+.btn-add{background:#4CAF50;color:#fff;flex:1}
+.btn-add:hover{background:#45a049}
+.btn-add:disabled{background:#ccc;cursor:not-allowed}
+
+.btn-clear{background:#f44336;color:#fff;flex:1}
+.btn-clear:hover{background:#da190b}
+
+.route-item{border:2px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column}
+.route-item:hover{border-color:#bbb;background:#fafafa}
+
+.route-city{font-weight:600;display:flex;align-items:center;font-size:14px}
+.route-details{font-size:13px;color:#555;margin:6px 0}
+
+.spinner{display:inline-block;width:12px;height:12px;border:2px solid #f3f3f3;border-top:2px solid #2196F3;border-radius:50%;animation:spin 1s linear infinite;margin-left:8px}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+.route-remove{background:#f44336;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:12px;margin-top:10px;width:100%}
+.route-remove:hover{background:#da190b}
+
+.empty-message{text-align:center;color:#999;padding:20px;font-size:13px}
+.success{color:#4CAF50;font-size:12px;margin-top:6px}
+
+.summary{background:#f0f0f0;padding:12px;border-radius:6px;margin-top:10px;font-size:13px;border-left:4px solid #FF9800;display:none}
+.summary-item{margin:6px 0;display:flex;justify-content:space-between}
+.summary-label{font-weight:600}
+.summary-value{color:#FF9800;font-weight:600}
+
+@media(max-width:768px){
+.sidebar{width:100%;max-height:40%;position:relative;z-index:1000;overflow-y:auto}
+#map{position:absolute;top:0;left:0;width:100%;height:100%}
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<div class="sidebar">
+
+<h1>Planowanie spotkania</h1>
+
+<div class="section">
+<div class="section-title">Miejsce docelowe (spotkanie)</div>
+<button class="btn-map" id="mapSelectBtn" onclick="toggleMapSelection()">Kliknij na mape aby wybrac cel</button>
+<div class="map-hint" id="mapHint">Kliknij na mape w wybranym punkcie.</div>
+<div class="destination-info" id="destInfo">Wybierz na mapie</div>
+<div class="destination-coords" id="destCoords"></div>
+<button class="clear-dest-btn" id="clearDestBtn" onclick="clearDestination()">Wyczysc cel</button>
+</div>
+
+<div class="section">
+<div class="section-title">Dodaj regiony (zespoly)</div>
+<div class="checkboxes">
+<label class="checkbox-label">
+<input type="checkbox" id="cb-warsaw" onchange="updateButtonState()">
+Warszawa
+</label>
+<label class="checkbox-label">
+<input type="checkbox" id="cb-poznan" onchange="updateButtonState()">
+Poznan
+</label>
+<label class="checkbox-label">
+<input type="checkbox" id="cb-wroclaw" onchange="updateButtonState()">
+Wroclaw
+</label>
+<label class="checkbox-label">
+<input type="checkbox" id="cb-zdunska" onchange="updateButtonState()">
+Zdunska Wola
+</label>
+</div>
+
+<div class="button-group">
+<button class="btn-add" id="addBtn" onclick="addSelectedRoutes()" disabled>Dodaj zaznaczone</button>
+<button class="btn-clear" onclick="clearAllRoutes()">Wyczysc wszystko</button>
+</div>
+</div>
+
+<div class="section">
+<div id="routesList"></div>
+</div>
+
+<div class="section" id="summarySection">
+<div class="summary" id="summaryContent">
+<div class="summary-item">
+<span class="summary-label">Laczna odleglosc:</span>
+<span class="summary-value" id="totalDistance">0 km</span>
+</div>
+<div class="summary-item">
+<span class="summary-label">Sredni czas:</span>
+<span class="summary-value" id="avgTime">0 min</span>
+</div>
+<div class="summary-item">
+<span class="summary-label">Max czas:</span>
+<span class="summary-value" id="maxTime">0 min</span>
+</div>
+<div class="summary-item">
+<span class="summary-label">Ilosc regionow:</span>
+<span class="summary-value" id="teamCount">0</span>
+</div>
+</div>
+</div>
+
+</div>
+<div id="map"></div>
+</div>
+
+<script>
+const map=L.map('map').setView([52,19],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OpenStreetMap'}).addTo(map);
+
+const regions={
+warsaw:{name:'Warszawa',lat:52.2297,lon:21.0122,color:'#E60000'},
+poznan:{name:'Poznan',lat:52.4082,lon:16.9251,color:'#FF8C00'},
+wroclaw:{name:'Wroclaw',lat:51.1079,lon:17.0327,color:'#0066FF'},
+zdunska_wola:{name:'Zdunska Wola',lat:51.6029,lon:18.9327,color:'#9C27B0'}
+};
+
+let selectingMap=false,currentDestination=null,routes=[],polylines={},markers={},destMarker=null;
+
+function toggleMapSelection(){
+selectingMap=!selectingMap;
+const btn=document.getElementById('mapSelectBtn');
+if(selectingMap){
+btn.classList.add('active');
+btn.textContent='Wybieranie aktywne - kliknij na mape';
+document.getElementById('mapHint').style.display='block';
+map.on('click',onMapClick);
+}else{
+btn.classList.remove('active');
+btn.textContent='Kliknij na mape aby wybrac cel';
+document.getElementById('mapHint').style.display='none';
+map.off('click',onMapClick);
+}
+}
+
+function onMapClick(e){
+reverseGeocode(e.latlng.lat,e.latlng.lng);
+}
+
+async function reverseGeocode(lat,lon){
+try{
+const response=await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+const data=await response.json();
+const name=data.address.city||data.address.town||data.address.village||data.name||`Punkt (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+
+// Usuń stare markery i linie
+Object.keys(polylines).forEach(key=>{
+map.removeLayer(polylines[key]);
+});
+Object.keys(markers).forEach(key=>{
+map.removeLayer(markers[key]);
+});
+polylines={};
+markers={};
+
+currentDestination={lat,lon,name};
+
+// Przelicz wszystkie istniejące trasy z nowym celem
+if(routes.length>0){
+routes.forEach(r=>{
+r.dest=currentDestination;
+r.distance=null;
+r.time=null;
+});
+
+for(const route of routes){
+await calculateRoute(route.key);
+}
+}
+
+setUI();
+setDestinationMarker();
+updateMapBounds();
+selectingMap=false;
+document.getElementById('mapSelectBtn').classList.remove('active');
+document.getElementById('mapSelectBtn').textContent='Kliknij na mape aby wybrac cel';
+document.getElementById('mapHint').style.display='none';
+map.off('click',onMapClick);
+updateUI();
+updateSummary();
+}catch(e){
+currentDestination={lat,lon,name:`Punkt (${lat.toFixed(4)}, ${lon.toFixed(4)})`};
+setUI();
+setDestinationMarker();
+}
+}
+
+function setUI(){
+if(!currentDestination){
+document.getElementById('destInfo').style.display='none';
+document.getElementById('destCoords').textContent='';
+document.getElementById('clearDestBtn').style.display='none';
+document.getElementById('addBtn').disabled=true;
+return;
+}
+document.getElementById('destInfo').textContent='Miejsce: '+currentDestination.name;
+document.getElementById('destInfo').style.display='block';
+document.getElementById('destCoords').textContent=`${currentDestination.lat.toFixed(4)}, ${currentDestination.lon.toFixed(4)}`;
+document.getElementById('clearDestBtn').style.display='block';
+updateButtonState();
+}
+
+function setDestinationMarker(){
+if(!currentDestination) return;
+if(destMarker) map.removeLayer(destMarker);
+destMarker=L.circleMarker([currentDestination.lat,currentDestination.lon],{radius:14,fillColor:'#4CAF50',color:'#fff',weight:3,fillOpacity:0.95}).addTo(map).bindPopup(`${currentDestination.name} (cel)`);
+}
+
+function clearDestination(){
+currentDestination=null;
+routes.forEach(r=>{if(polylines[r.key])map.removeLayer(polylines[r.key]);if(markers[r.key])map.removeLayer(markers[r.key]);});
+routes=[];
+polylines={};
+markers={};
+if(destMarker)map.removeLayer(destMarker);
+destMarker=null;
+setUI();
+updateUI();
+updateSummary();
+map.setView([52,19],6);
+}
+
+function updateButtonState(){
+const hasCheckbox=document.getElementById('cb-warsaw').checked||document.getElementById('cb-poznan').checked||document.getElementById('cb-wroclaw').checked||document.getElementById('cb-zdunska').checked;
+document.getElementById('addBtn').disabled=!currentDestination||!hasCheckbox;
+}
+
+async function addSelectedRoutes(){
+if(!currentDestination){alert('Wybierz miejsce docelowe!');return;}
+const regionMap={'cb-warsaw':'warsaw','cb-poznan':'poznan','cb-wroclaw':'wroclaw','cb-zdunska':'zdunska_wola'};
+const selected=['cb-warsaw','cb-poznan','cb-wroclaw','cb-zdunska'].filter(id=>document.getElementById(id).checked).map(id=>regionMap[id]);
+if(selected.length===0){alert('Zaznacz region!');return;}
+
+for(const regionKey of selected){
+const region=regions[regionKey];
+const routeKey=`${region.lon},${region.lat}-${currentDestination.lon},${currentDestination.lat}`;
+if(!routes.some(r=>r.key===routeKey)){
+routes.push({key:routeKey,source:{lat:region.lat,lon:region.lon,name:region.name},dest:currentDestination,color:region.color,regionKey});
+}
+}
+
+document.getElementById('addBtn').disabled=true;
+for(const route of routes){if(!route.distance)await calculateRoute(route.key);}
+updateMapBounds();
+document.getElementById('addBtn').disabled=false;
+
+['cb-warsaw','cb-poznan','cb-wroclaw','cb-zdunska'].forEach(id=>document.getElementById(id).checked=false);
+updateButtonState();
+updateUI();
+}
+
+async function calculateRoute(routeKey){
+const route=routes.find(r=>r.key===routeKey);
+if(!route)return;
+try{
+const url=`https://router.project-osrm.org/route/v1/car/${route.source.lon},${route.source.lat};${route.dest.lon},${route.dest.lat}?overview=full&geometries=geojson`;
+const response=await fetch(url);
+if(!response.ok)throw new Error('Route not found');
+const data=await response.json();
+if(data.code!=='Ok'||!data.routes)throw new Error('No route');
+const routeData=data.routes[0];
+route.distance=(routeData.distance/1000).toFixed(1);
+route.time=Math.round(routeData.duration/60);
+drawRoute(routeKey,routeData.geometry,route);
+updateUI();
+updateSummary();
+}catch(e){
+route.error='Blad';
+updateUI();
+}
+}
+
+function drawRoute(routeKey,geometry,route){
+if(polylines[routeKey])map.removeLayer(polylines[routeKey]);
+const coords=geometry.coordinates.map(c=>L.latLng(c[1],c[0]));
+polylines[routeKey]=L.polyline(coords,{color:route.color,weight:5,opacity:0.8}).addTo(map);
+if(markers[routeKey])map.removeLayer(markers[routeKey]);
+markers[routeKey]=L.circleMarker([route.source.lat,route.source.lon],{radius:8,fillColor:route.color,color:'#fff',weight:2,fillOpacity:0.9}).addTo(map).bindPopup(route.source.name);
+}
+
+function removeRoute(routeKey){
+routes=routes.filter(r=>r.key!==routeKey);
+if(polylines[routeKey]){map.removeLayer(polylines[routeKey]);delete polylines[routeKey];}
+if(markers[routeKey]){map.removeLayer(markers[routeKey]);delete markers[routeKey];}
+updateUI();
+updateSummary();
+updateMapBounds();
+}
+
+function clearAllRoutes(){
+if(routes.length===0)return;
+if(!confirm('Usunac wszystkie trasy?'))return;
+routes.forEach(r=>{if(polylines[r.key])map.removeLayer(polylines[r.key]);if(markers[r.key])map.removeLayer(markers[r.key]);});
+routes=[];
+polylines={};
+markers={};
+updateUI();
+updateSummary();
+updateMapBounds();
+}
+
+function updateUI(){
+const list=document.getElementById('routesList');
+if(routes.length===0){list.innerHTML='<div class="empty-message">Brak dodanych tras.</div>';return;}
+list.innerHTML=routes.map(r=>{
+let html='';
+if(!r.distance)html='<span class="spinner"></span> Obliczanie...';
+else if(r.error)html=`<div style="color:#f44336;font-size:12px">BLAD: ${r.error}</div>`;
+else html=`<div class="success">OK</div><div class="route-details">${r.distance} km / ${r.time} min</div>`;
+return `<div class="route-item"><div class="route-city">${r.source.name}</div><div>${html}</div><button class="route-remove" onclick="removeRoute('${r.key}')">Usun</button></div>`;
+}).join('');
+}
+
+function updateSummary(){
+if(routes.length===0){document.getElementById('summarySection').style.display='none';return;}
+const valid=routes.filter(r=>r.distance);
+if(valid.length===0){document.getElementById('summarySection').style.display='none';return;}
+const distances=valid.map(r=>parseFloat(r.distance));
+const times=valid.map(r=>r.time);
+const totalDist=distances.reduce((a,b)=>a+b,0).toFixed(1);
+const avgTime=Math.round(times.reduce((a,b)=>a+b,0)/times.length);
+const maxTime=Math.max(...times);
+document.getElementById('totalDistance').textContent=totalDist+' km';
+document.getElementById('avgTime').textContent=avgTime+' min';
+document.getElementById('maxTime').textContent=maxTime+' min';
+document.getElementById('teamCount').textContent=valid.length;
+document.getElementById('summarySection').style.display='block';
+}
+
+function updateMapBounds(){
+if(!currentDestination||routes.length===0)return;
+const coords=[[currentDestination.lat,currentDestination.lon],...routes.map(r=>[r.source.lat,r.source.lon])];
+const bounds=L.latLngBounds(coords);
+map.fitBounds(bounds,{padding:[80,80]});
+}
+
+updateUI();
+updateSummary();
+</script>
+</body>
+</html>
