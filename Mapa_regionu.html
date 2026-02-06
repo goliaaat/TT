@@ -424,6 +424,8 @@
                     id: regionId,
                     dth: props.DTH || '-',
                     mi: props.MI || '-',
+                    rks: props.RKS || '-',
+                    ds: props.DS || '-',
                     kolor: props.fill || '#FF6B6B'
                 };
                 allRegions.push(regionsMap[regionId]);
@@ -477,6 +479,8 @@
                         </div>
                         <div style="margin-bottom:2px;"><strong>DTH:</strong> ${props.DTH || '-'}</div>
                         <div style="margin-bottom:2px;"><strong>MI:</strong> ${props.MI || '-'}</div>
+                        <div style="margin-bottom:2px;"><strong>RKS:</strong> ${props.RKS || '-'}</div>
+                        <div style="margin-bottom:2px;"><strong>DS:</strong> ${props.DS || '-'}</div>
                     </div>
                 `;
                 layer.bindPopup(popupHtml);
@@ -638,7 +642,9 @@
         const filtered = allRegions.filter(r =>
             (r.id || '').toLowerCase().includes(t) ||
             (r.dth || '').toLowerCase().includes(t) ||
-            (r.mi || '').toLowerCase().includes(t)
+            (r.mi || '').toLowerCase().includes(t) ||
+            (r.rks || '').toLowerCase().includes(t) ||
+            (r.ds || '').toLowerCase().includes(t)
         );
 
         renderRegionList(filtered);
@@ -647,3 +653,4 @@
 </script>
 </body>
 </html>
+
