@@ -285,7 +285,7 @@
                 </div>
             </div>
 
-            <!-- WYSZUKIWANIE REGIONÓW (ID / DTH / MI / RKS / DS) -->
+            <!-- WYSZUKIWANIE REGIONÓW -->
             <div class="control-group search-box">
                 <label class="control-label">Wyszukiwanie regionów</label>
                 <input
@@ -297,7 +297,7 @@
                 />
             </div>
 
-            <!-- WYSZUKIWANIE MIAST NA MAPIE -->
+            <!-- WYSZUKIWANIE MIAST -->
             <div class="control-group search-box">
                 <label class="control-label">Wyszukiwanie miasta</label>
                 <input
@@ -338,10 +338,6 @@
     const allRegions = [];
     const featureMap = {};
 
-    // Warstwy dla własnych danych (miasta / drogi)
-    const customCitiesLayer = L.layerGroup().addTo(map);
-    const customRoadsLayer = L.layerGroup().addTo(map);
-
     const tileProviders = {
         osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -381,37 +377,35 @@
         })
     };
 
-    // Domyślnie "czysta" mapa Positron (mniej napisów)
     tileProviders.positron.addTo(map);
     tileLayer = tileProviders.positron;
 
-    // Ładowanie danych – map.geojson + granice państw (maska na świat)
     Promise.all([
         fetch('https://raw.githubusercontent.com/goliaaat/TT/main/map.geojson').then(r => r.json()),
         fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson').then(r => r.json())
     ])
-        .then(([dthData, countriesData]) => {
-            geojsonData = dthData;
+    .then(([dthData, countriesData]) => {
+        geojsonData = dthData;
 
-            const poland = countriesData.features.find(f => f.properties.ADMIN === 'Poland');
+        const poland = countriesData.features.find(f => f.properties.ADMIN === 'Poland');
 
-            if (poland) {
-                maskLayer = L.geoJSON({
-                    type: 'FeatureCollection',
-                    features: countriesData.features.filter(f => f.properties.ADMIN !== 'Poland')
-                }, {
-                    style: {
-                        fillColor: '#ffffff',
-                        fillOpacity: 1,
-                        stroke: false
-                    },
-                    interactive: false
-                }).addTo(map);
-            }
+        if (poland) {
+            maskLayer = L.geoJSON({
+                type: 'FeatureCollection',
+                features: countriesData.features.filter(f => f.properties.ADMIN !== 'Poland')
+            }, {
+                style: {
+                    fillColor: '#ffffff',
+                    fillOpacity: 1,
+                    stroke: false
+                },
+                interactive: false
+            }).addTo(map);
+        }
 
-            initMap();
-        })
-        .catch(e => console.error('Błąd ładowania danych:', e));
+        initMap();
+    })
+    .catch(e => console.error('Błąd ładowania danych:', e));
 
     function initMap() {
         geojsonData.features.forEach(f => {
@@ -595,12 +589,10 @@
 
     let currentMarker = null;
 
-    // Wyszukiwanie miasta po Enter
     function searchCity(query) {
         if (!query || query.trim().length < 2) return;
 
-        const searchUrl =
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=pl&limit=5`;
+        const searchUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=pl&limit=5`;
 
         fetch(searchUrl)
             .then(r => r.json())
@@ -632,8 +624,23 @@
             .catch(err => console.error('Błąd wyszukiwania miasta:', err));
     }
 
-    // Filtrowanie listy regionów po ID / DTH / MI / RKS / DS
     function filterRegionList(term) {
         const t = term.trim().toLowerCase();
         if (!t) {
             renderRegionList(allRegions);
+            return;
+        }
+
+        const filtered = allRegions.filter(r =>
+            (r.id || '').toLowerCase().includes(t) ||
+            (r.dth || '').toLowerCase().includes(t) ||
+            (r.mi || '').toLowerCase().includes(t) ||
+            (r.rks || '').toLowerCase().includes(t) ||
+            (r.ds || '').toLowerCase().includes(t)
+        );
+
+        renderRegionList(filtered);
+    }
+</script>
+</body>
+</html>
