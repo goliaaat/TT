@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8" />
+    <title>Mapa Podziału DTH</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Leaflet -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-soft: #dbeafe;
+            --border: #e5e7eb;
+            --bg: #f3f4f6;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 360px;
+            background: #fff;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            background: #f9fafb;
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .sidebar-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .controls {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .btn-toggle {
+            width: 100%;
+            padding: 7px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .btn-toggle.active {
+            border-color: var(--primary);
+            background: var(--primary-soft);
+        }
+
+        .map-type-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+        }
+
+        .map-btn {
+            padding: 5px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #fff;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .map-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 7px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 14px;
+        }
+
+        .region-item {
+            background: #f9fafb;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            padding: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+        }
+
+        .region-item.active {
+            background: var(--primary-soft);
+            border-color: var(--primary);
+        }
+
+        .region-id {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .map-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* WŁASNE, ZGODNE ATTRIBUTION */
+        .map-attribution {
+            position: absolute;
+            bottom: 6px;
+            left: 8px;
+            z-index: 500;
+            font-size: 10px;
+            color: #6b7280;
+            background: rgba(255,255,255,0.85);
+            padding: 3px 6px;
+            border-radius: 6px;
+        }
+
+        .map-attribution a {
+            color: #374151;
+            text-decoration: none;
+        }
+
+        .map-attribution a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <header class="sidebar-header">
+            <div class="sidebar-title">Mapa regionów</div>
+            <div class="sidebar-subtitle">Kliknij region, aby przybliżyć</div>
+        </header>
+
+        <section class="controls">
+            <div class="control-group">
+                <label class="control-label">Kolory</label>
+                <button class="btn-toggle active" id="colorToggle" onclick="toggleColors()">
+                    <span>Kolory regionów</span>
+                    <span id="colorText">Włączone</span>
+                </button>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Podkład mapy</label>
+                <div class="map-type-grid">
+                    <button class="map-btn active" onclick="changeMap('positron', this)">Positron</button>
+                    <button class="map-btn" onclick="changeMap('osm', this)">OSM</button>
+                    <button class="map-btn" onclick="changeMap('satellite', this)">Satelita</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Szukaj regionu</label>
+                <input class="search-input" oninput="filterRegionList(this.value)">
+            </div>
+
+            <div class="control-group">
+                <label class="control-label">Szukaj miasta</label>
+                <input class="search-input" onkeydown="if(event.key==='Enter') searchCity(this.value)">
+            </div>
+        </section>
+
+        <div class="list" id="listContainer"></div>
+    </aside>
+
+    <main class="map-wrapper">
+        <div id="map"></div>
+        <div class="map-attribution" id="mapAttribution">
+            © <a href="https://www.openstreetmap.org/copyright" target="_blank">
+                OpenStreetMap</a> contributors © CARTO
+        </div>
+    </main>
+</div>
+
+<script>
+    const map = L.map('map', { center: [52, 19], zoom: 6 });
+
+    let tileLayer;
+    let geoJsonLayer;
+    let featureMap = {};
+    let geojsonData;
+    let colorEnabled = true;
+
+    const tileProviders = {
+        positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'),
+        osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+        satellite: L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+        )
+    };
+
+    const attributionTexts = {
+        positron: '© OpenStreetMap contributors © CARTO',
+        osm: '© OpenStreetMap contributors',
+        satellite: '© Esri'
+    };
+
+    function updateAttribution(type) {
+        document.getElementById('mapAttribution').innerHTML = attributionTexts[type];
+    }
+
+    tileLayer = tileProviders.positron.addTo(map);
+
+    fetch('https://raw.githubusercontent.com/goliaaat/TT/main/map.geojson')
+        .then(r => r.json())
+        .then(data => {
+            geojsonData = data;
+            renderMap();
+        });
+
+    function renderMap() {
+        featureMap = {};
+
+        if (geoJsonLayer) map.removeLayer(geoJsonLayer);
+
+        geoJsonLayer = L.geoJSON(geojsonData, {
+            style: f => ({
+                fillColor: colorEnabled ? (f.properties.fill || '#ff6b6b') : '#e5e7eb',
+                color: '#374151',
+                weight: 1.5,
+                fillOpacity: colorEnabled ? 0.45 : 0.2
+            }),
+            onEachFeature: (f, layer) => {
+                const id = f.properties['ID REGION'];
+                featureMap[id] = featureMap[id] || [];
+                featureMap[id].push(layer);
+            }
+        }).addTo(map);
+    }
+
+    function toggleColors() {
+        colorEnabled = !colorEnabled;
+        document.getElementById('colorToggle').classList.toggle('active');
+        document.getElementById('colorText').textContent = colorEnabled ? 'Włączone' : 'Wyłączone';
+        renderMap();
+    }
+
+    function changeMap(type, btn) {
+        map.removeLayer(tileLayer);
+        tileLayer = tileProviders[type].addTo(map);
+        updateAttribution(type);
+        document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function searchCity(q) {
+        if (q.length < 2) return;
+
+        fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=pl&limit=1`,
+            {
+                headers: {
+                    'Accept-Language': 'pl',
+                    'User-Agent': 'Mapa-DTH/1.0 (kontakt@firma.pl)'
+                }
+            }
+        )
+        .then(r => r.json())
+        .then(d => {
+            if (!d.length) return alert('Nie znaleziono miasta');
+            map.setView([d[0].lat, d[0].lon], 10);
+        });
+    }
+
+    function filterRegionList() {}
+</script>
+
+</body>
+</html>
