@@ -285,14 +285,14 @@
                 </div>
             </div>
 
-            <!-- WYSZUKIWANIE REGIONÓW (ID / DTH / MI) -->
+            <!-- WYSZUKIWANIE REGIONÓW -->
             <div class="control-group search-box">
                 <label class="control-label">Wyszukiwanie regionów</label>
                 <input
                     type="text"
                     id="regionSearch"
                     class="search-input"
-                    placeholder="Szukaj regionu (ID / DTH / MI)..."
+                    placeholder="Szukaj regionu (ID / DTH / MI / RKS / DS)..."
                     oninput="filterRegionList(this.value)"
                 />
             </div>
@@ -304,7 +304,7 @@
                     type="text"
                     id="searchInput"
                     class="search-input"
-                    placeholder="Wpisz nazwę miasta i naciśnij Enter.2.."
+                    placeholder="Wpisz nazwę miasta i naciśnij Enter..."
                     onkeydown="if (event.key === 'Enter') searchCity(this.value)"
                 />
             </div>
@@ -410,7 +410,6 @@
             }
 
             initMap();
-            initCustomExamples();
         })
         .catch(e => console.error('Błąd ładowania danych:', e));
 
@@ -475,7 +474,7 @@
                 const popupHtml = `
                     <div style="font-size:12px; max-width:220px;">
                         <div style="font-size:13px; font-weight:600; margin-bottom:4px; color:#111827;">
-                            ID regionu: ${regionId}
+                            ID: ${regionId}
                         </div>
                         <div style="margin-bottom:2px;"><strong>DTH:</strong> ${props.DTH || '-'}</div>
                         <div style="margin-bottom:2px;"><strong>MI:</strong> ${props.MI || '-'}</div>
@@ -511,6 +510,8 @@
                 <div class="region-id">ID: ${formattedId}</div>
                 <div class="region-meta-line"><strong>DTH:</strong> ${region.dth || 'Brak danych'}</div>
                 <div class="region-meta-line"><strong>MI:</strong> ${region.mi || '-'}</div>
+                <div class="region-meta-line"><strong>RKS:</strong> ${region.rks || '-'}</div>
+                <div class="region-meta-line"><strong>DS:</strong> ${region.ds || '-'}</div>
             `;
             container.appendChild(div);
         });
@@ -631,7 +632,7 @@
             .catch(err => console.error('Błąd wyszukiwania miasta:', err));
     }
 
-    // Filtrowanie listy regionów po ID / DTH / MI
+    // Filtrowanie listy regionów po ID / DTH / MI / RKS / DS
     function filterRegionList(term) {
         const t = term.trim().toLowerCase();
         if (!t) {
@@ -653,5 +654,3 @@
 </script>
 </body>
 </html>
-
-
