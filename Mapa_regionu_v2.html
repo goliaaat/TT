@@ -143,6 +143,13 @@
         .region-id {
             font-weight: 700;
             color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .region-meta-line {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 2px;
         }
 
         .map-wrapper {
@@ -155,7 +162,6 @@
             height: 100%;
         }
 
-        /* WŁASNE, ZGODNE ATTRIBUTION */
         .map-attribution {
             position: absolute;
             bottom: 6px;
@@ -207,12 +213,12 @@
 
             <div class="control-group">
                 <label class="control-label">Szukaj regionu</label>
-                <input class="search-input" oninput="filterRegionList(this.value)">
+                <input class="search-input" id="regionSearch" oninput="filterRegionList(this.value)" placeholder="ID / DTH / MI / RKS / DS...">
             </div>
 
             <div class="control-group">
                 <label class="control-label">Szukaj miasta</label>
-                <input class="search-input" onkeydown="if(event.key==='Enter') searchCity(this.value)">
+                <input class="search-input" id="citySearch" onkeydown="if(event.key==='Enter') searchCity(this.value)" placeholder="Wpisz nazwę miasta...">
             </div>
         </section>
 
@@ -222,32 +228,44 @@
     <main class="map-wrapper">
         <div id="map"></div>
         <div class="map-attribution" id="mapAttribution">
-            © <a href="https://www.openstreetmap.org/copyright" target="_blank">
-                OpenStreetMap</a> contributors © CARTO
+            © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © CARTO
         </div>
     </main>
 </div>
 
 <script>
-    const map = L.map('map', { center: [52, 19], zoom: 6 });
+    const map = L.map('map', { 
+        center: [52, 19], 
+        zoom: 6,
+        zoomControl: true
+    });
 
     let tileLayer;
     let geoJsonLayer;
     let featureMap = {};
     let geojsonData;
     let colorEnabled = true;
+    let currentMarker = null;
+
+    const regionsMap = {};
+    const allRegions = [];
 
     const tileProviders = {
-        positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'),
-        osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+        positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }),
+        osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }),
         satellite: L.tileLayer(
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-        )
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18
+        })
     };
 
     const attributionTexts = {
-        positron: '© OpenStreetMap contributors © CARTO',
-        osm: '© OpenStreetMap contributors',
+        positron: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © CARTO',
+        osm: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
         satellite: '© Esri'
     };
 
@@ -257,36 +275,121 @@
 
     tileLayer = tileProviders.positron.addTo(map);
 
+    // Ładowanie danych
     fetch('https://raw.githubusercontent.com/goliaaat/TT/main/map.geojson')
         .then(r => r.json())
         .then(data => {
             geojsonData = data;
-            renderMap();
+            initMap();
+        })
+        .catch(e => console.error('Błąd ładowania danych:', e));
+
+    function initMap() {
+        // Budowanie listy regionów
+        geojsonData.features.forEach(f => {
+            const props = f.properties;
+            const regionId = props['ID REGION'];
+
+            if (!regionsMap[regionId]) {
+                regionsMap[regionId] = {
+                    id: regionId,
+                    dth: props.DTH || '-',
+                    mi: props.MI || '-',
+                    rks: props.RKS || '-',
+                    ds: props.DS || '-',
+                    kolor: props.fill || '#FF6B6B'
+                };
+                allRegions.push(regionsMap[regionId]);
+            }
         });
+
+        allRegions.sort((a, b) => parseFloat(a.id) - parseFloat(b.id));
+
+        renderMap();
+        renderRegionList(allRegions);
+
+        if (geoJsonLayer) {
+            const bounds = geoJsonLayer.getBounds();
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [30, 30] });
+            }
+        }
+    }
 
     function renderMap() {
         featureMap = {};
 
-        if (geoJsonLayer) map.removeLayer(geoJsonLayer);
+        if (geoJsonLayer) {
+            map.removeLayer(geoJsonLayer);
+        }
 
         geoJsonLayer = L.geoJSON(geojsonData, {
             style: f => ({
                 fillColor: colorEnabled ? (f.properties.fill || '#ff6b6b') : '#e5e7eb',
-                color: '#374151',
+                color: '#4b5563',
                 weight: 1.5,
-                fillOpacity: colorEnabled ? 0.45 : 0.2
+                fillOpacity: colorEnabled ? 0.45 : 0.2,
+                opacity: 0.9
             }),
             onEachFeature: (f, layer) => {
-                const id = f.properties['ID REGION'];
-                featureMap[id] = featureMap[id] || [];
-                featureMap[id].push(layer);
+                const props = f.properties;
+                const regionId = props['ID REGION'];
+                
+                if (!featureMap[regionId]) {
+                    featureMap[regionId] = [];
+                }
+                featureMap[regionId].push(layer);
+
+                const popupHtml = `
+                    <div style="font-size:12px; max-width:220px;">
+                        <div style="font-size:13px; font-weight:600; margin-bottom:4px; color:#111827;">
+                            ID: ${regionId}
+                        </div>
+                        <div style="margin-bottom:2px;"><strong>DTH:</strong> ${props.DTH || '-'}</div>
+                        <div style="margin-bottom:2px;"><strong>MI:</strong> ${props.MI || '-'}</div>
+                        <div style="margin-bottom:2px;"><strong>RKS:</strong> ${props.RKS || '-'}</div>
+                        <div style="margin-bottom:2px;"><strong>DS:</strong> ${props.DS || '-'}</div>
+                    </div>
+                `;
+                layer.bindPopup(popupHtml);
+
+                layer.on('click', () => selectRegion(regionId));
+                layer.on('mouseover', () => highlightRegion(regionId));
+                layer.on('mouseout', () => resetHighlight(regionId));
             }
         }).addTo(map);
     }
 
+    function renderRegionList(regions) {
+        const container = document.getElementById('listContainer');
+        container.innerHTML = '';
+
+        regions.forEach(region => {
+            const div = document.createElement('div');
+            div.className = 'region-item';
+            div.id = 'item-' + region.id;
+
+            div.onclick = () => selectRegion(region.id);
+            div.onmouseenter = () => highlightRegion(region.id);
+            div.onmouseleave = () => resetHighlight(region.id);
+
+            const formattedId = region.id.replace('.', ',');
+
+            div.innerHTML = `
+                <div class="region-id">ID: ${formattedId}</div>
+                <div class="region-meta-line"><strong>DTH:</strong> ${region.dth}</div>
+                <div class="region-meta-line"><strong>MI:</strong> ${region.mi}</div>
+                <div class="region-meta-line"><strong>RKS:</strong> ${region.rks}</div>
+                <div class="region-meta-line"><strong>DS:</strong> ${region.ds}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
     function toggleColors() {
         colorEnabled = !colorEnabled;
-        document.getElementById('colorToggle').classList.toggle('active');
+        const btn = document.getElementById('colorToggle');
+        btn.classList.toggle('active');
         document.getElementById('colorText').textContent = colorEnabled ? 'Włączone' : 'Wyłączone';
         renderMap();
     }
@@ -299,26 +402,108 @@
         btn.classList.add('active');
     }
 
+    function selectRegion(regionId) {
+        document.querySelectorAll('.region-item').forEach(el => el.classList.remove('active'));
+        const activeEl = document.getElementById('item-' + regionId);
+        if (activeEl) {
+            activeEl.classList.add('active');
+            activeEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+
+        if (featureMap[regionId] && featureMap[regionId].length > 0) {
+            const group = new L.FeatureGroup(featureMap[regionId]);
+            const bounds = group.getBounds();
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, {
+                    padding: [40, 40],
+                    maxZoom: 10
+                });
+            }
+        }
+    }
+
+    function highlightRegion(regionId) {
+        if (!geoJsonLayer || !featureMap[regionId]) return;
+
+        featureMap[regionId].forEach(layer => {
+            layer.setStyle({
+                weight: 3,
+                color: '#111827',
+                fillOpacity: colorEnabled ? 0.6 : 0.3
+            });
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+                layer.bringToFront();
+            }
+        });
+    }
+
+    function resetHighlight(regionId) {
+        if (!geoJsonLayer || !featureMap[regionId]) return;
+        featureMap[regionId].forEach(layer => {
+            geoJsonLayer.resetStyle(layer);
+        });
+    }
+
     function searchCity(q) {
-        if (q.length < 2) return;
+        if (!q || q.trim().length < 2) return;
 
         fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=pl&limit=1`,
             {
                 headers: {
                     'Accept-Language': 'pl',
-                    'User-Agent': 'Mapa-DTH/1.0 (kontakt@firma.pl)'
+                    'User-Agent': 'Mapa-DTH/1.0'
                 }
             }
         )
         .then(r => r.json())
         .then(d => {
-            if (!d.length) return alert('Nie znaleziono miasta');
-            map.setView([d[0].lat, d[0].lon], 10);
-        });
+            if (!d.length) {
+                alert('Nie znaleziono miasta');
+                return;
+            }
+            
+            const lat = parseFloat(d[0].lat);
+            const lon = parseFloat(d[0].lon);
+
+            if (currentMarker) {
+                map.removeLayer(currentMarker);
+            }
+
+            currentMarker = L.marker([lat, lon], {
+                icon: L.icon({
+                    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                    iconSize: [25, 41],
+                    shadowSize: [41, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34]
+                })
+            }).addTo(map);
+
+            currentMarker.bindPopup(`<b>${d[0].display_name}</b>`).openPopup();
+            map.setView([lat, lon], 10);
+        })
+        .catch(err => console.error('Błąd wyszukiwania:', err));
     }
 
-    function filterRegionList() {}
+    function filterRegionList(term) {
+        const t = (term || '').trim().toLowerCase();
+        if (!t) {
+            renderRegionList(allRegions);
+            return;
+        }
+
+        const filtered = allRegions.filter(r =>
+            (r.id || '').toLowerCase().includes(t) ||
+            (r.dth || '').toLowerCase().includes(t) ||
+            (r.mi || '').toLowerCase().includes(t) ||
+            (r.rks || '').toLowerCase().includes(t) ||
+            (r.ds || '').toLowerCase().includes(t)
+        );
+
+        renderRegionList(filtered);
+    }
 </script>
 
 </body>
