@@ -104,6 +104,11 @@
             background: #fff;
             font-size: 11px;
             cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .map-btn:hover {
+            background: #f9fafb;
         }
 
         .map-btn.active {
@@ -182,6 +187,11 @@
         .map-attribution a:hover {
             text-decoration: underline;
         }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f3f4f6; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
     </style>
 </head>
 <body>
@@ -207,7 +217,13 @@
                 <div class="map-type-grid">
                     <button class="map-btn active" onclick="changeMap('positron', this)">Positron</button>
                     <button class="map-btn" onclick="changeMap('osm', this)">OSM</button>
+                    <button class="map-btn" onclick="changeMap('voyager', this)">Voyager</button>
+                    <button class="map-btn" onclick="changeMap('topo', this)">Topo</button>
                     <button class="map-btn" onclick="changeMap('satellite', this)">Satelita</button>
+                    <button class="map-btn" onclick="changeMap('dark', this)">Dark</button>
+                    <button class="map-btn" onclick="changeMap('esri', this)">Esri</button>
+                    <button class="map-btn" onclick="changeMap('humanitarian', this)">HOT</button>
+                    <button class="map-btn" onclick="changeMap('stamen', this)">OSM DE</button>
                 </div>
             </div>
 
@@ -240,6 +256,8 @@
         zoomControl: true
     });
 
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
     let tileLayer;
     let geoJsonLayer;
     let featureMap = {};
@@ -257,8 +275,25 @@
         osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }),
-        satellite: L.tileLayer(
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        voyager: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }),
+        topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+            maxZoom: 17
+        }),
+        satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18
+        }),
+        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }),
+        esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 18
+        }),
+        humanitarian: L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }),
+        stamen: L.tileLayer('https://tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
             maxZoom: 18
         })
     };
@@ -266,7 +301,13 @@
     const attributionTexts = {
         positron: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © CARTO',
         osm: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
-        satellite: '© Esri'
+        voyager: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © CARTO',
+        topo: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © OpenTopoMap',
+        satellite: '© Esri',
+        dark: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © CARTO',
+        esri: '© Esri',
+        humanitarian: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © HOT',
+        stamen: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
     };
 
     function updateAttribution(type) {
@@ -395,9 +436,12 @@
     }
 
     function changeMap(type, btn) {
+        if (!tileProviders[type]) return;
+        
         map.removeLayer(tileLayer);
         tileLayer = tileProviders[type].addTo(map);
         updateAttribution(type);
+        
         document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
     }
