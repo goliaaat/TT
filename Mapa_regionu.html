@@ -285,14 +285,14 @@
                 </div>
             </div>
 
-            <!-- WYSZUKIWANIE REGIONÓW (ID / DTH / MI) -->
+            <!-- WYSZUKIWANIE REGIONÓW (ID / DTH / MI / RKS / DS) -->
             <div class="control-group search-box">
                 <label class="control-label">Wyszukiwanie regionów</label>
                 <input
                     type="text"
                     id="regionSearch"
                     class="search-input"
-                    placeholder="Szukaj regionu (ID / DTH / MI)..."
+                    placeholder="Szukaj regionu (ID / DTH / MI / RKS / DS)..."
                     oninput="filterRegionList(this.value)"
                 />
             </div>
@@ -410,7 +410,6 @@
             }
 
             initMap();
-            initCustomExamples();
         })
         .catch(e => console.error('Błąd ładowania danych:', e));
 
@@ -424,6 +423,8 @@
                     id: regionId,
                     dth: props.DTH || '-',
                     mi: props.MI || '-',
+                    rks: props.RKS || '-',
+                    ds: props.DS || '-',
                     kolor: props.fill || '#FF6B6B'
                 };
                 allRegions.push(regionsMap[regionId]);
@@ -472,11 +473,13 @@
 
                 const popupHtml = `
                     <div style="font-size:12px; max-width:220px;">
-                        <div style="font-size:13px; font-weight:600; margin-bottom:4px; color:#111827;">
+                        <div style="font-size:13px; font-weight:600; margin-bottom:6px; color:#111827;">
                             ID regionu: ${regionId}
                         </div>
                         <div style="margin-bottom:2px;"><strong>DTH:</strong> ${props.DTH || '-'}</div>
                         <div style="margin-bottom:2px;"><strong>MI:</strong> ${props.MI || '-'}</div>
+                        <div style="margin-bottom:2px;"><strong>RKS:</strong> ${props.RKS || '-'}</div>
+                        <div style="margin-bottom:2px;"><strong>DS:</strong> ${props.DS || '-'}</div>
                     </div>
                 `;
                 layer.bindPopup(popupHtml);
@@ -507,6 +510,8 @@
                 <div class="region-id">ID: ${formattedId}</div>
                 <div class="region-meta-line"><strong>DTH:</strong> ${region.dth || 'Brak danych'}</div>
                 <div class="region-meta-line"><strong>MI:</strong> ${region.mi || '-'}</div>
+                <div class="region-meta-line"><strong>RKS:</strong> ${region.rks || '-'}</div>
+                <div class="region-meta-line"><strong>DS:</strong> ${region.ds || '-'}</div>
             `;
             container.appendChild(div);
         });
@@ -627,23 +632,8 @@
             .catch(err => console.error('Błąd wyszukiwania miasta:', err));
     }
 
-    // Filtrowanie listy regionów po ID / DTH / MI
+    // Filtrowanie listy regionów po ID / DTH / MI / RKS / DS
     function filterRegionList(term) {
         const t = term.trim().toLowerCase();
         if (!t) {
             renderRegionList(allRegions);
-            return;
-        }
-
-        const filtered = allRegions.filter(r =>
-            (r.id || '').toLowerCase().includes(t) ||
-            (r.dth || '').toLowerCase().includes(t) ||
-            (r.mi || '').toLowerCase().includes(t)
-        );
-
-        renderRegionList(filtered);
-    }
-
-</script>
-</body>
-</html>
