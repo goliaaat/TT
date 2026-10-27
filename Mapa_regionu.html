@@ -245,8 +245,13 @@
         }
 
         .leaflet-control-attribution {
-            display: none !important;
+            font-family: "Inter", sans-serif;
+            font-size: 10px;
+            color: var(--text-second);
+            background: rgba(255, 255, 255, 0.85) !important;
         }
+
+        .leaflet-control-attribution a { color: var(--text-main); }
 
         .leaflet-popup-content-wrapper {
             border-radius: 8px;
@@ -356,8 +361,11 @@
     const map = L.map('map', {
         center: [51.9, 19.1],
         zoom: 6,
-        zoomControl: false
+        zoomControl: false,
+        attributionControl: false
     });
+
+    L.control.attribution({ position: 'bottomleft', prefix: false }).addTo(map);
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
@@ -379,43 +387,46 @@
     const tileProviders = {
         osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: ''
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
         }),
-        positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: ''
+        positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
         }),
         voyager: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            attribution: ''
+            subdomains: 'abcd',
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
         }),
         topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
             maxZoom: 17,
-            attribution: ''
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, SRTM | &copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> (CC-BY-SA)'
         }),
         satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 18,
-            attribution: ''
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community'
         }),
-        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: ''
+        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 20,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
         }),
         esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 18,
-            attribution: ''
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, and others'
         }),
         humanitarian: L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
             maxZoom: 19,
-            attribution: ''
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, tiles by <a href="https://www.hotosm.org" target="_blank" rel="noopener">HOT</a>, hosted by OSM France'
         }),
         stamen: L.tileLayer('https://tile.openstreetmap.de/tiles/osmde/{z}/{x}/{y}.png', {
             maxZoom: 18,
-            attribution: ''
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors, tiles by <a href="https://openstreetmap.de" target="_blank" rel="noopener">OSM Germany</a>'
         })
     };
 
-    // Domyślnie "czysta" mapa Positron (mniej napisów)
+    // Domyślnie mapa Positron
     tileProviders.positron.addTo(map);
     tileLayer = tileProviders.positron;
 
@@ -577,6 +588,11 @@
         }
         tileLayer = tileProviders[type];
         tileLayer.addTo(map);
+
+        // maska świata poza Polską ma kolor tła podkładu (ciemny podkład = ciemna maska)
+        if (maskLayer) {
+            maskLayer.setStyle({ fillColor: type === 'dark' ? '#1E1E1E' : '#ffffff' });
+        }
 
         document.querySelectorAll('.map-btn').forEach(btn => btn.classList.remove('active'));
         if (buttonElement) {
