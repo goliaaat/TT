@@ -223,6 +223,9 @@
             text-decoration: underline;
         }
 
+        .tiles-light { filter: grayscale(1) contrast(0.92) brightness(1.08); }
+        .tiles-dark { filter: invert(1) hue-rotate(180deg) grayscale(0.6) brightness(0.85) contrast(0.95); }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: #CFCFCB; border-radius: 999px; }
@@ -254,13 +257,10 @@
             <div class="control-group">
                 <label class="control-label">Podkład mapy</label>
                 <div class="map-type-grid">
-                    <button class="map-btn active" onclick="changeMap('positron', this)">Positron</button>
+                    <button class="map-btn active" onclick="changeMap('positron', this)">Jasny</button>
                     <button class="map-btn" onclick="changeMap('osm', this)">OSM</button>
-                    <button class="map-btn" onclick="changeMap('voyager', this)">Voyager</button>
                     <button class="map-btn" onclick="changeMap('topo', this)">Topo</button>
-                    <button class="map-btn" onclick="changeMap('satellite', this)">Satelita</button>
-                    <button class="map-btn" onclick="changeMap('dark', this)">Dark</button>
-                    <button class="map-btn" onclick="changeMap('esri', this)">Esri</button>
+                    <button class="map-btn" onclick="changeMap('dark', this)">Ciemny</button>
                     <button class="map-btn" onclick="changeMap('humanitarian', this)">HOT</button>
                     <button class="map-btn" onclick="changeMap('stamen', this)">OSM DE</button>
                 </div>
@@ -283,7 +283,7 @@
     <main class="map-wrapper">
         <div id="map"></div>
         <div class="map-attribution" id="mapAttribution">
-            © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>
+            © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors
         </div>
     </main>
 </div>
@@ -308,29 +308,19 @@
     const allRegions = [];
 
     const tileProviders = {
-        positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 20
+        positron: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            className: 'tiles-light',
+            maxZoom: 19
         }),
         osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }),
-        voyager: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 20
-        }),
         topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
             maxZoom: 17
         }),
-        satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 18
-        }),
-        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 20
-        }),
-        esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-            maxZoom: 18
+        dark: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            className: 'tiles-dark',
+            maxZoom: 19
         }),
         humanitarian: L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
             maxZoom: 19
@@ -341,13 +331,10 @@
     };
 
     const attributionTexts = {
-        positron: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+        positron: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
         osm: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
-        voyager: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
         topo: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © OpenTopoMap',
-        satellite: 'Tiles © Esri',
-        dark: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
-        esri: 'Tiles © Esri',
+        dark: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
         humanitarian: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © HOT',
         stamen: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
     };
