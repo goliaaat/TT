@@ -256,7 +256,7 @@
                 <div class="map-type-grid">
                     <button class="map-btn active" onclick="changeMap('positron', this)">Positron</button>
                     <button class="map-btn" onclick="changeMap('osm', this)">OSM</button>
-                    <button class="map-btn" onclick="changeMap('voyager', this)">Voyager</button>
+                    <button class="map-btn" onclick="changeMap('voyager', this)">Esri Topo</button>
                     <button class="map-btn" onclick="changeMap('topo', this)">Topo</button>
                     <button class="map-btn" onclick="changeMap('satellite', this)">Satelita</button>
                     <button class="map-btn" onclick="changeMap('dark', this)">Dark</button>
@@ -283,7 +283,7 @@
     <main class="map-wrapper">
         <div id="map"></div>
         <div class="map-attribution" id="mapAttribution">
-            © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>
+            Tiles © Esri — Esri, DeLorme, NAVTEQ
         </div>
     </main>
 </div>
@@ -308,16 +308,16 @@
     const allRegions = [];
 
     const tileProviders = {
-        positron: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 20
+        positron: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            maxNativeZoom: 16,
+            maxZoom: 19
         }),
         osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19
         }),
-        voyager: L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 20
+        voyager: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+            maxNativeZoom: 19,
+            maxZoom: 19
         }),
         topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
             maxZoom: 17
@@ -325,9 +325,9 @@
         satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 18
         }),
-        dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            subdomains: 'abcd',
-            maxZoom: 20
+        dark: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+            maxNativeZoom: 16,
+            maxZoom: 19
         }),
         esri: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
             maxZoom: 18
@@ -341,12 +341,12 @@
     };
 
     const attributionTexts = {
-        positron: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+        positron: 'Tiles © Esri — Esri, DeLorme, NAVTEQ',
         osm: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors',
-        voyager: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+        voyager: 'Tiles © Esri — Esri, DeLorme, NAVTEQ',
         topo: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © OpenTopoMap',
         satellite: 'Tiles © Esri',
-        dark: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
+        dark: 'Tiles © Esri — Esri, DeLorme, NAVTEQ',
         esri: 'Tiles © Esri',
         humanitarian: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors © HOT',
         stamen: '© <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
