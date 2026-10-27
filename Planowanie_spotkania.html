@@ -72,6 +72,7 @@ button{font-family:inherit;padding:10px;border:none;border-radius:999px;cursor:p
 .summary-label{font-weight:600}
 .summary-value{color:var(--red);font-weight:700}
 
+.tiles-light{filter:grayscale(1) contrast(.92) brightness(1.08)}
 .leaflet-control-attribution{font-family:"Inter",sans-serif;font-size:10px;color:var(--second)}
 .leaflet-control-attribution a{color:var(--ink)}
 
@@ -161,10 +162,10 @@ Zduńska Wola
 <script>
 const map=L.map('map').setView([52,19],6);
 map.attributionControl.setPrefix(false);
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',{
-maxNativeZoom:16,
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+className:'tiles-light',
 maxZoom:19,
-attribution:'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
 }).addTo(map);
 
 const regions={
